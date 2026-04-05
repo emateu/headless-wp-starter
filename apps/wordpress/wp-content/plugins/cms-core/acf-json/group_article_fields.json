@@ -1,0 +1,70 @@
+{
+  "key": "group_article_fields",
+  "title": "Article Fields",
+  "fields": [
+    {
+      "key": "field_article_subtitle",
+      "label": "Subtitle",
+      "name": "subtitle",
+      "aria-label": "",
+      "type": "textarea",
+      "instructions": "Descriptive subheading displayed below the title.",
+      "required": false,
+      "conditional_logic": false,
+      "wrapper": {
+        "width": "",
+        "class": "",
+        "id": ""
+      },
+      "show_in_graphql": 1,
+      "rows": 2,
+      "new_lines": "",
+      "default_value": "",
+      "maxlength": "",
+      "placeholder": ""
+    },
+    {
+      "key": "field_article_featured",
+      "label": "Featured",
+      "name": "featured",
+      "aria-label": "",
+      "type": "true_false",
+      "instructions": "Mark this article as the featured\/hero story.",
+      "required": false,
+      "conditional_logic": false,
+      "wrapper": {
+        "width": "",
+        "class": "",
+        "id": ""
+      },
+      "show_in_graphql": 1,
+      "default_value": 0,
+      "ui": 1,
+      "message": "",
+      "ui_on_text": "",
+      "ui_off_text": ""
+    }
+  ],
+  "location": [
+    [
+      {
+        "param": "post_type",
+        "operator": "==",
+        "value": "post"
+      }
+    ]
+  ],
+  "menu_order": 1,
+  "position": "acf_after_title",
+  "style": "default",
+  "label_placement": "top",
+  "instruction_placement": "label",
+  "hide_on_screen": [],
+  "active": true,
+  "description": "",
+  "show_in_rest": false,
+  "display_title": "",
+  "show_in_graphql": 1,
+  "graphql_field_name": "articleFields",
+  "modified": 1775024444
+}

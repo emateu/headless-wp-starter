@@ -1,0 +1,159 @@
+name: Build and Deploy to Dev
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      wordpress: ${{ steps.filter.outputs.wordpress }}
+      web: ${{ steps.filter.outputs.web }}
+      infra: ${{ steps.filter.outputs.infra }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            wordpress:
+              - 'apps/wordpress/**'
+            web:
+              - 'apps/web/**'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+            infra:
+              - 'docker-compose.prod.yml'
+              - 'infra/**'
+
+  build-wordpress:
+    needs: changes
+    if: needs.changes.outputs.wordpress == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: ./apps/wordpress
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/headless-wp-starter-cms:latest
+            ghcr.io/${{ github.repository_owner }}/headless-wp-starter-cms:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  build-web:
+    needs: changes
+    if: needs.changes.outputs.web == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          push: true
+          build-args: |
+            BUILD_VERSION=${{ github.sha }}
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/headless-wp-starter-web:latest
+            ghcr.io/${{ github.repository_owner }}/headless-wp-starter-web:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [changes, build-wordpress, build-web]
+    if: >-
+      always() &&
+      needs.build-wordpress.result != 'failure' &&
+      needs.build-web.result != 'failure' &&
+      (needs.build-wordpress.result == 'success' ||
+       needs.build-web.result == 'success' ||
+       github.event_name == 'workflow_dispatch')
+    environment: dev
+    steps:
+      - name: Check deploy configuration
+        id: config
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+        run: |
+          if [ -z "$VPS_HOST" ] || [ -z "$SSH_KEY" ]; then
+            echo "::notice::Deploy skipped — configure VPS_HOST and SSH_KEY secrets in the dev environment to enable."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.config.outputs.skip != 'true'
+
+      - name: Copy files to VPS
+        if: steps.config.outputs.skip != 'true'
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: deploy
+          key: ${{ secrets.SSH_KEY }}
+          source: "docker-compose.prod.yml,infra/caddy/Caddyfile,infra/backup/Dockerfile,infra/backup/backup.sh,infra/loki/loki-config.yml,infra/alloy/config.alloy,infra/prometheus/prometheus.yml,infra/grafana/provisioning,infra/grafana/dashboards"
+          target: /opt/app
+
+      - name: Deploy
+        if: steps.config.outputs.skip != 'true'
+        uses: appleboy/ssh-action@v1
+        env:
+          WP_BUILT: ${{ needs.build-wordpress.result == 'success' }}
+          WEB_BUILT: ${{ needs.build-web.result == 'success' }}
+          SHA: ${{ github.sha }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: deploy
+          key: ${{ secrets.SSH_KEY }}
+          envs: WP_BUILT,WEB_BUILT,SHA
+          script: |
+            cd /opt/app
+
+            # Use new SHA for rebuilt images, keep current tag for unchanged ones
+            if [ "$WP_BUILT" = "true" ]; then
+              export WP_IMAGE_TAG=$SHA
+            else
+              export WP_IMAGE_TAG=$(docker compose -f docker-compose.prod.yml images wordpress --format '{{.Tag}}' 2>/dev/null || echo latest)
+            fi
+
+            if [ "$WEB_BUILT" = "true" ]; then
+              export WEB_IMAGE_TAG=$SHA
+            else
+              export WEB_IMAGE_TAG=$(docker compose -f docker-compose.prod.yml images web --format '{{.Tag}}' 2>/dev/null || echo latest)
+            fi
+
+            echo "WP_IMAGE_TAG=$WP_IMAGE_TAG"
+            echo "WEB_IMAGE_TAG=$WEB_IMAGE_TAG"
+
+            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+            docker compose -f docker-compose.prod.yml exec -T wordpress wp-init.sh
+            docker image prune -a -f

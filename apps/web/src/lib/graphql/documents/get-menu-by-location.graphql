@@ -1,0 +1,7 @@
+query GetMenuByLocation($location: MenuLocationEnum!) {
+  menuItems(where: { location: $location }, first: 50) {
+    nodes {
+      ...MenuItemFields
+    }
+  }
+}

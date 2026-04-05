@@ -1,0 +1,152 @@
+{
+  "key": "group_homepage_settings",
+  "title": "Homepage Settings",
+  "fields": [
+    {
+      "key": "field_homepage_featured_override",
+      "label": "Featured Article Override",
+      "name": "homepage_featured_override",
+      "aria-label": "",
+      "type": "post_object",
+      "instructions": "Override the automatic featured article. Leave empty to use the latest featured post.",
+      "required": false,
+      "conditional_logic": false,
+      "wrapper": {
+        "width": "",
+        "class": "",
+        "id": ""
+      },
+      "show_in_graphql": 1,
+      "post_type": ["post"],
+      "return_format": "id",
+      "allow_null": 1,
+      "taxonomy": [],
+      "multiple": 0,
+      "ui": 1,
+      "bidirectional_target": []
+    },
+    {
+      "key": "field_homepage_layout",
+      "label": "Homepage Layout",
+      "name": "homepage_layout",
+      "aria-label": "",
+      "type": "select",
+      "instructions": "Select the homepage layout variant.",
+      "required": false,
+      "conditional_logic": false,
+      "wrapper": {
+        "width": "",
+        "class": "",
+        "id": ""
+      },
+      "show_in_graphql": 1,
+      "choices": {
+        "layout_a": "Layout A — Hero (2\/3) + sidebar notes (1\/3)",
+        "layout_c": "Layout C — Full-width hero + 4-column grid"
+      },
+      "default_value": "layout_a",
+      "multiple": 0,
+      "allow_null": 0,
+      "ui": 0,
+      "ajax": 0,
+      "placeholder": "",
+      "return_format": "value",
+      "create_options": 0,
+      "save_options": 0
+    },
+    {
+      "key": "field_homepage_hero_sidebar_overrides",
+      "label": "Hero Sidebar Overrides",
+      "name": "homepage_hero_sidebar_overrides",
+      "aria-label": "",
+      "type": "repeater",
+      "instructions": "Override the 2 sidebar notes next to the hero. Leave empty for automatic selection.",
+      "required": false,
+      "conditional_logic": false,
+      "wrapper": {
+        "width": "",
+        "class": "",
+        "id": ""
+      },
+      "show_in_graphql": 1,
+      "max": 2,
+      "layout": "table",
+      "button_label": "Add Post",
+      "allow_null": 1,
+      "min": 0,
+      "rows_per_page": 20,
+      "collapsed": "",
+      "sub_fields": [
+        {
+          "key": "field_sidebar_post",
+          "label": "Post",
+          "name": "post",
+          "aria-label": "",
+          "type": "post_object",
+          "instructions": "",
+          "required": false,
+          "conditional_logic": false,
+          "wrapper": {
+            "width": "",
+            "class": "",
+            "id": ""
+          },
+          "show_in_graphql": 1,
+          "post_type": ["post"],
+          "return_format": "id",
+          "allow_null": 0,
+          "taxonomy": [],
+          "multiple": 0,
+          "ui": 1,
+          "bidirectional_target": [],
+          "parent_repeater": "field_homepage_hero_sidebar_overrides"
+        }
+      ]
+    },
+    {
+      "key": "field_homepage_banner_override",
+      "label": "Banner Override",
+      "name": "homepage_banner_override",
+      "aria-label": "",
+      "type": "post_object",
+      "instructions": "Override the full-width banner article. Leave empty for automatic selection.",
+      "required": false,
+      "conditional_logic": false,
+      "wrapper": {
+        "width": "",
+        "class": "",
+        "id": ""
+      },
+      "show_in_graphql": 1,
+      "post_type": ["post"],
+      "return_format": "id",
+      "allow_null": 1,
+      "taxonomy": [],
+      "multiple": 0,
+      "ui": 1,
+      "bidirectional_target": []
+    }
+  ],
+  "location": [
+    [
+      {
+        "param": "options_page",
+        "operator": "==",
+        "value": "site-settings-homepage"
+      }
+    ]
+  ],
+  "menu_order": 0,
+  "position": "normal",
+  "style": "default",
+  "label_placement": "top",
+  "instruction_placement": "label",
+  "hide_on_screen": [],
+  "active": true,
+  "description": "",
+  "show_in_rest": false,
+  "display_title": "",
+  "show_in_graphql": 1,
+  "graphql_field_name": "homepageSettings",
+  "modified": 1775024444
+}

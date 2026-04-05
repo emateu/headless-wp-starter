@@ -1,0 +1,51 @@
+// Docker log discovery
+discovery.docker "containers" {
+  host = "tcp://docker-socket-proxy:2375"
+}
+
+// Relabel: extract container name as label
+discovery.relabel "containers" {
+  targets = discovery.docker.containers.targets
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.*)"
+    target_label  = "container"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    target_label  = "service"
+  }
+}
+
+// Collect logs from discovered containers
+loki.source.docker "containers" {
+  host       = "tcp://docker-socket-proxy:2375"
+  targets    = discovery.relabel.containers.output
+  labels     = { "cluster" = "default" }
+  forward_to = [loki.process.containers.receiver]
+}
+
+// Process: extract log level where possible
+loki.process "containers" {
+  // WordPress/Apache logs: extract status code and level
+  stage.regex {
+    expression = `(?P<level>error|warn|notice|info|debug|crit|alert|emerg)`
+  }
+
+  stage.labels {
+    values = { "level" = "" }
+  }
+
+  // Forward to Loki
+  forward_to = [loki.write.default.receiver]
+}
+
+// Write to Loki
+loki.write "default" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+    batch_wait = "1s"
+  }
+}

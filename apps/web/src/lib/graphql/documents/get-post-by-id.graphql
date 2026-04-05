@@ -1,0 +1,5 @@
+query GetPostById($id: ID!) {
+  post(id: $id, idType: DATABASE_ID) {
+    ...PostCardFields
+  }
+}

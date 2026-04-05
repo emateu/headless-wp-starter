@@ -1,0 +1,56 @@
+#cloud-config
+# VPS provisioning for Hetzner CX22 + Rocky Linux 10
+# Usage: paste into Hetzner "User Data" field during VPS creation
+
+timezone: UTC
+
+users:
+  - name: deploy
+    groups: [wheel]
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    lock_passwd: true
+    ssh_authorized_keys:
+      - <paste-your-ssh-public-key-here>
+
+# Disable SSH password authentication system-wide
+ssh_pwauth: false
+
+# Disable root SSH login
+disable_root: true
+
+package_update: true
+package_upgrade: true
+
+runcmd:
+  # Harden SSH: explicitly set in sshd_config as a defense-in-depth measure
+  - sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config
+  - sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config
+  - systemctl restart sshd
+
+  # Install Docker CE from official repo
+  - dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+  - dnf install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+  - systemctl enable --now docker
+  - usermod -aG docker deploy
+
+  # Install and configure firewall: only SSH (22), HTTP (80), HTTPS (443)
+  # Rocky Linux 10 does not include firewalld by default
+  - dnf install -y firewalld
+  - systemctl enable --now firewalld
+  - firewall-cmd --permanent --zone=public --add-service=ssh
+  - firewall-cmd --permanent --zone=public --add-service=http
+  - firewall-cmd --permanent --zone=public --add-service=https
+  - firewall-cmd --permanent --zone=public --remove-service=cockpit 2>/dev/null || true
+  - firewall-cmd --permanent --zone=public --remove-service=dhcpv6-client 2>/dev/null || true
+  - firewall-cmd --reload
+
+  # Create project directory
+  - mkdir -p /opt/app
+  - chown deploy:deploy /opt/app
+
+  # Enable automatic security updates
+  - dnf install -y dnf-automatic
+  - sed -i 's/^apply_updates.*/apply_updates = yes/' /etc/dnf/automatic.conf
+  - sed -i 's/^upgrade_type.*/upgrade_type = security/' /etc/dnf/automatic.conf
+  - systemctl enable --now dnf-automatic.timer

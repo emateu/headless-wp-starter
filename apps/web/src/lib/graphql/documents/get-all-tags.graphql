@@ -1,0 +1,7 @@
+query GetAllTags {
+  tags(where: { hideEmpty: true, orderby: COUNT, order: DESC }, first: 15) {
+    nodes {
+      ...TagFields
+    }
+  }
+}

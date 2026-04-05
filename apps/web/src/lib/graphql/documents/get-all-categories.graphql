@@ -1,0 +1,8 @@
+query GetAllCategories {
+  categories(where: { hideEmpty: true }, first: 20) {
+    nodes {
+      ...CategoryFields
+      count
+    }
+  }
+}

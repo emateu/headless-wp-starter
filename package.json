@@ -1,0 +1,29 @@
+{
+  "name": "headless-wp-starter",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "build": "pnpm --filter web build",
+    "lint": "biome check",
+    "format": "biome format --write",
+    "wp:setup-acf": "./apps/wordpress/plugins/setup-acf-pro.sh",
+    "wp:up": "docker compose up -d --build",
+    "wp:down": "docker compose down",
+    "wp:logs": "docker compose logs -f wordpress",
+    "wp:init": "docker compose exec wordpress wp-init.sh --allow-root",
+    "wp:destroy": "docker compose down -v",
+    "ralph": "./ralph/once.sh",
+    "ralph:loop": "./ralph/loop.sh",
+    "postinstall": "lefthook install || true"
+  },
+  "packageManager": "pnpm@10.28.1",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "lefthook"
+    ]
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.2.0",
+    "lefthook": "^2.1.4"
+  }
+}

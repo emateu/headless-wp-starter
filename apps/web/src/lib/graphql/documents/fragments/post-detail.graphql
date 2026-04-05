@@ -1,0 +1,32 @@
+fragment PostDetailFields on Post {
+  databaseId
+  title
+  slug
+  date
+  modified
+  excerpt
+  featuredImage {
+    node {
+      ...MediaItemFields
+    }
+  }
+  categories {
+    nodes {
+      ...CategoryFields
+    }
+  }
+  tags {
+    nodes {
+      ...TagFields
+    }
+  }
+  articleFields {
+    subtitle
+    featured
+  }
+  contentSlices {
+    contentSlices {
+      ...SliceFields
+    }
+  }
+}

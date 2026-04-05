@@ -1,0 +1,10 @@
+query GetLatestPosts($first: Int!, $notIn: [ID]) {
+  posts(
+    where: { orderby: { field: DATE, order: DESC }, notIn: $notIn }
+    first: $first
+  ) {
+    nodes {
+      ...PostCardFields
+    }
+  }
+}

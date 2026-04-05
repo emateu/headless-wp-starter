@@ -1,0 +1,30 @@
+query GetHomepageSettings {
+  homepage {
+    homepageSettings {
+      homepageFeaturedOverride {
+        nodes {
+          ... on Post {
+            databaseId
+          }
+        }
+      }
+      homepageLayout
+      homepageHeroSidebarOverrides {
+        post {
+          nodes {
+            ... on Post {
+              databaseId
+            }
+          }
+        }
+      }
+      homepageBannerOverride {
+        nodes {
+          ... on Post {
+            databaseId
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,23 @@
+query GetPostsByCategorySlug(
+  $first: Int!
+  $after: String
+  $categorySlug: String!
+) {
+  posts(
+    where: {
+      categoryName: $categorySlug
+      orderby: { field: DATE, order: DESC }
+    }
+    first: $first
+    after: $after
+  ) {
+    nodes {
+      ...PostCardFields
+    }
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      endCursor
+    }
+  }
+}

@@ -1,0 +1,16 @@
+query SearchPosts($first: Int!, $after: String, $search: String!) {
+  posts(
+    where: { search: $search, orderby: { field: DATE, order: DESC } }
+    first: $first
+    after: $after
+  ) {
+    nodes {
+      ...PostCardFields
+    }
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      endCursor
+    }
+  }
+}

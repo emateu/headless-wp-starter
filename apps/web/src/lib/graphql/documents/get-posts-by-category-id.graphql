@@ -1,0 +1,14 @@
+query GetPostsByCategoryId($first: Int!, $categoryId: Int, $notIn: [ID]) {
+  posts(
+    where: {
+      categoryId: $categoryId
+      orderby: { field: DATE, order: DESC }
+      notIn: $notIn
+    }
+    first: $first
+  ) {
+    nodes {
+      ...PostCardFields
+    }
+  }
+}

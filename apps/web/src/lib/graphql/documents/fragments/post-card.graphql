@@ -1,0 +1,21 @@
+fragment PostCardFields on Post {
+  databaseId
+  title
+  slug
+  date
+  excerpt
+  featuredImage {
+    node {
+      ...MediaItemFields
+    }
+  }
+  categories {
+    nodes {
+      ...CategoryFields
+    }
+  }
+  articleFields {
+    subtitle
+    featured
+  }
+}

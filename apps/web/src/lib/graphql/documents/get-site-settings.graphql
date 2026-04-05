@@ -1,0 +1,16 @@
+query GetSiteSettings {
+  siteSettings {
+    siteConfig {
+      siteLogo {
+        node {
+          ...MediaItemFields
+        }
+      }
+      socialLinks {
+        platform
+        url
+      }
+      copyrightText
+    }
+  }
+}

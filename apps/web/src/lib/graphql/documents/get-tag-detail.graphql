@@ -1,0 +1,11 @@
+query GetTagDetail($slug: [String!]) {
+  tags(where: { slug: $slug }) {
+    nodes {
+      databaseId
+      name
+      slug
+      description
+      count
+    }
+  }
+}

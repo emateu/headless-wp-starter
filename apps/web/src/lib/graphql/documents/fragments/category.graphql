@@ -1,0 +1,5 @@
+fragment CategoryFields on Category {
+  databaseId
+  name
+  slug
+}

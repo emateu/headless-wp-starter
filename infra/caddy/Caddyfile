@@ -1,0 +1,14 @@
+{$WEB_DOMAIN:localhost} {
+	reverse_proxy web:3000
+}
+
+{$CMS_DOMAIN:localhost} {
+	request_body {
+		max_size 25MB
+	}
+	reverse_proxy wordpress:80
+}
+
+{$GRAFANA_DOMAIN:} {
+	reverse_proxy grafana:3000
+}

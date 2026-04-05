@@ -1,0 +1,5 @@
+fragment TagFields on Tag {
+  databaseId
+  name
+  slug
+}

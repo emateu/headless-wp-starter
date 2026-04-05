@@ -1,0 +1,5 @@
+query GetPageByUri($uri: String!) {
+  pageBy(uri: $uri) {
+    ...PageDetailFields
+  }
+}

@@ -1,0 +1,208 @@
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      WEB_DOMAIN: ${WEB_DOMAIN:?WEB_DOMAIN env var is required}
+      CMS_DOMAIN: ${CMS_DOMAIN:?CMS_DOMAIN env var is required}
+      GRAFANA_DOMAIN: ${GRAFANA_DOMAIN:-}
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      wordpress:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+
+  db:
+    image: mariadb:11
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  wordpress:
+    image: ghcr.io/${GHCR_OWNER:?Set GHCR_OWNER in .env}/headless-wp-starter-cms:${WP_IMAGE_TAG:-latest}
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_NAME: ${DB_NAME}
+      WORDPRESS_DB_USER: ${DB_USER}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+      WP_URL: https://${CMS_DOMAIN}
+      WP_TITLE: ${WP_TITLE:-My Site}
+      WP_ADMIN_USER: ${WP_ADMIN_USER}
+      WP_ADMIN_PASSWORD: ${WP_ADMIN_PASSWORD}
+      WP_ADMIN_EMAIL: ${WP_ADMIN_EMAIL}
+      WP_ENV: production
+      WORDPRESS_CONFIG_EXTRA: |
+        define('DISALLOW_FILE_EDIT', true);
+        define('DISALLOW_FILE_MODS', true);
+        define('AUTOMATIC_UPDATER_DISABLED', true);
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:80/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    volumes:
+      - wp_uploads:/var/www/html/wp-content/uploads
+    expose:
+      - "80"
+
+  web:
+    image: ghcr.io/${GHCR_OWNER:?Set GHCR_OWNER in .env}/headless-wp-starter-web:${WEB_IMAGE_TAG:-latest}
+    restart: always
+    depends_on:
+      wordpress:
+        condition: service_healthy
+    environment:
+      WORDPRESS_URL: http://wordpress:80
+      WORDPRESS_HOSTNAME: ${CMS_DOMAIN}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO /dev/null http://127.0.0.1:3000/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    expose:
+      - "3000"
+
+  backup:
+    build: ./infra/backup
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      R2_BUCKET: ${R2_BUCKET:-}
+      RCLONE_CONFIG_R2_TYPE: s3
+      RCLONE_CONFIG_R2_PROVIDER: Cloudflare
+      RCLONE_CONFIG_R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY:-}
+      RCLONE_CONFIG_R2_SECRET_ACCESS_KEY: ${R2_SECRET_KEY:-}
+      RCLONE_CONFIG_R2_ENDPOINT: ${R2_ENDPOINT:-}
+      RCLONE_CONFIG_R2_ACL: private
+      RCLONE_CONFIG_R2_NO_CHECK_BUCKET: "true"
+    volumes:
+      - backup_data:/backups
+      - wp_uploads:/uploads:ro
+
+  # --- Monitoring ---
+
+  grafana:
+    image: grafana/grafana:12.4.2
+    restart: always
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_SERVER_ROOT_URL: https://${GRAFANA_DOMAIN:-localhost}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infra/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    expose:
+      - "3000"
+    networks:
+      - default
+      - monitoring
+
+  loki:
+    image: grafana/loki:3
+    restart: always
+    command: -config.file=/etc/loki/loki-config.yml
+    volumes:
+      - ./infra/loki/loki-config.yml:/etc/loki/loki-config.yml:ro
+      - loki_data:/loki
+    expose:
+      - "3100"
+    networks:
+      - monitoring
+
+  alloy:
+    image: grafana/alloy:v1.9.1
+    restart: always
+    command: run /etc/alloy/config.alloy --server.http.listen-addr=0.0.0.0:12345
+    volumes:
+      - ./infra/alloy/config.alloy:/etc/alloy/config.alloy:ro
+    depends_on:
+      - loki
+      - docker-socket-proxy
+    networks:
+      - default
+      - monitoring
+      - docker-proxy
+
+  prometheus:
+    image: prom/prometheus:v3
+    restart: always
+    command: --config.file=/etc/prometheus/prometheus.yml --storage.tsdb.retention.time=7d
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    expose:
+      - "9090"
+    networks:
+      - monitoring
+
+  node-exporter:
+    image: prom/node-exporter:v1.10.2
+    restart: always
+    pid: host
+    command: --path.rootfs=/host
+    volumes:
+      - /:/host:ro,rslave
+    expose:
+      - "9100"
+    networks:
+      - monitoring
+
+  docker-socket-proxy:
+    image: tecnativa/docker-socket-proxy:0.3
+    restart: always
+    environment:
+      CONTAINERS: 1
+      NETWORKS: 1
+      POST: 0
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - docker-proxy
+
+networks:
+  default:
+  monitoring:
+    internal: true
+  docker-proxy:
+    internal: true
+
+volumes:
+  db_data:
+  wp_uploads:
+  caddy_data:
+  caddy_config:
+  backup_data:
+  grafana_data:
+  loki_data:
+  prometheus_data:

@@ -1,0 +1,15 @@
+fragment MenuItemFields on MenuItem {
+  id
+  label
+  url
+  path
+  parentId
+  childItems {
+    nodes {
+      id
+      label
+      url
+      path
+    }
+  }
+}

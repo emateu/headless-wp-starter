@@ -1,0 +1,25 @@
+query GetPostsForFeedByCategory($first: Int!, $categorySlug: String!) {
+  posts(
+    first: $first
+    where: {
+      status: PUBLISH
+      orderby: { field: DATE, order: DESC }
+      categoryName: $categorySlug
+    }
+  ) {
+    nodes {
+      title
+      slug
+      date
+      excerpt
+      categories {
+        nodes {
+          ...CategoryFields
+        }
+      }
+      articleFields {
+        subtitle
+      }
+    }
+  }
+}

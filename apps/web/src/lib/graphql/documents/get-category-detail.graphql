@@ -1,0 +1,11 @@
+query GetCategoryDetail($slug: [String!]) {
+  categories(where: { slug: $slug }) {
+    nodes {
+      databaseId
+      name
+      slug
+      description
+      count
+    }
+  }
+}

@@ -1,0 +1,21 @@
+query GetPostsForFeed($first: Int!) {
+  posts(
+    first: $first
+    where: { status: PUBLISH, orderby: { field: DATE, order: DESC } }
+  ) {
+    nodes {
+      title
+      slug
+      date
+      excerpt
+      categories {
+        nodes {
+          ...CategoryFields
+        }
+      }
+      articleFields {
+        subtitle
+      }
+    }
+  }
+}

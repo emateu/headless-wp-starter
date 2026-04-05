@@ -1,0 +1,5 @@
+query GetPostBySlug($slug: String!) {
+  postBy(slug: $slug) {
+    ...PostDetailFields
+  }
+}

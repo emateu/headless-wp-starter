@@ -1,0 +1,16 @@
+query GetPostsByTagSlug($first: Int!, $after: String, $tagSlug: String!) {
+  posts(
+    where: { tag: $tagSlug, orderby: { field: DATE, order: DESC } }
+    first: $first
+    after: $after
+  ) {
+    nodes {
+      ...PostCardFields
+    }
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      endCursor
+    }
+  }
+}

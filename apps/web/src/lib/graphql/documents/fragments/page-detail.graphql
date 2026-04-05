@@ -1,0 +1,17 @@
+fragment PageDetailFields on Page {
+  databaseId
+  title
+  slug
+  date
+  modified
+  featuredImage {
+    node {
+      ...MediaItemFields
+    }
+  }
+  contentSlices {
+    contentSlices {
+      ...SliceFields
+    }
+  }
+}

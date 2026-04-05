@@ -1,0 +1,7 @@
+query GetFeaturedPost {
+  posts(where: { orderby: { field: DATE, order: DESC } }, first: 1) {
+    nodes {
+      ...PostCardFields
+    }
+  }
+}

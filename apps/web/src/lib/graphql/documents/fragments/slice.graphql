@@ -1,0 +1,64 @@
+fragment SliceFields on ContentSlicesContentSlices_Layout {
+  ... on ContentSlicesContentSlicesRichTextLayout {
+    fieldGroupName
+    content
+  }
+  ... on ContentSlicesContentSlicesImageLayout {
+    fieldGroupName
+    image {
+      node {
+        ...MediaItemFields
+      }
+    }
+    caption
+    altText
+  }
+  ... on ContentSlicesContentSlicesGalleryLayout {
+    fieldGroupName
+    images {
+      nodes {
+        ...MediaItemFields
+      }
+    }
+  }
+  ... on ContentSlicesContentSlicesQuoteLayout {
+    fieldGroupName
+    text
+    author
+  }
+  ... on ContentSlicesContentSlicesInfoboxLayout {
+    fieldGroupName
+    title
+    content
+  }
+  ... on ContentSlicesContentSlicesHeroLayout {
+    fieldGroupName
+    title
+    subtitle
+    image {
+      node {
+        ...MediaItemFields
+      }
+    }
+    ctaText
+    ctaUrl
+  }
+  ... on ContentSlicesContentSlicesLatestPostsLayout {
+    fieldGroupName
+    title
+    subtitle
+    category {
+      nodes {
+        databaseId
+        ... on Category {
+          slug
+        }
+      }
+    }
+    count
+  }
+  ... on ContentSlicesContentSlicesEmbedLayout {
+    fieldGroupName
+    url
+  }
+}
