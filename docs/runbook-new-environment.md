@@ -43,14 +43,31 @@ This creates `~/.ssh/deploy` (private) and `~/.ssh/deploy.pub` (public). You'll 
 
 ## 3. Cloudflare Access (Zero Trust)
 
-- [ ] Create Access Application for the CMS domain
-- [ ] Create Access Application for the Grafana domain
-- [ ] Configure authentication policy (Google, email OTP, etc.)
-- [ ] Add authorized users/emails
-- [ ] Add **Bypass** policy for CMS domain: URI Path starts with `/wp-content/uploads/` (so images are publicly accessible). Move it **above** the authentication policy.
-- [ ] Verify: accessing the CMS domain shows Cloudflare Access login screen
-- [ ] Verify: accessing the Grafana domain shows Cloudflare Access login screen
-- [ ] Verify: images at `https://<cms-domain>/wp-content/uploads/...` load without login
+Instead of protecting the entire CMS domain and adding bypass rules (which don't work reliably with path-based exceptions), we protect only the sensitive endpoints individually. Everything else (uploads, static assets) stays public by default.
+
+### Grafana
+
+- [ ] Create Access Application (Self-hosted):
+  - **Name**: `Grafana`
+  - **Domain**: `<grafana-domain>`
+  - **Policy**: Allow — include authorized emails
+- [ ] Verify: accessing `https://<grafana-domain>` shows Cloudflare Access login
+
+### CMS — protected endpoints
+
+Create one Self-hosted Access Application per endpoint, all with the same Allow policy (authorized emails):
+
+| App name | Domain | Path | Why |
+|----------|--------|------|-----|
+| `CMS Admin` | `<cms-domain>` | `wp-admin` | WordPress dashboard |
+| `CMS Login` | `<cms-domain>` | `wp-login.php` | Login page |
+| `CMS GraphQL` | `<cms-domain>` | `graphql` | API — only consumed server-side by Next.js via internal Docker network, but exposed publicly |
+| `CMS XMLRPC` | `<cms-domain>` | `xmlrpc.php` | Legacy API — unused, common brute-force target |
+
+- [ ] Create all 4 CMS applications with Allow policies
+- [ ] Verify: `https://<cms-domain>/wp-admin` shows Cloudflare Access login
+- [ ] Verify: `https://<cms-domain>/wp-content/uploads/...` loads without login
+- [ ] Verify: `curl https://<cms-domain>/graphql` returns Access login redirect
 
 ## 4. Cloudflare R2
 
