@@ -75,6 +75,7 @@ No `.env` file needed — all defaults work out of the box. WordPress credential
 | `pnpm wp:down` | Stop services |
 | `pnpm wp:logs` | Tail WordPress logs |
 | `pnpm wp:destroy` | Stop services and delete all volumes (fresh start) |
+| `pnpm wp:restore` | Download latest DB + uploads from R2 and restore locally (run `--help` for setup) |
 
 ### Useful links
 

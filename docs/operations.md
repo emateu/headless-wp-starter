@@ -119,7 +119,19 @@ This triggers a rebuild of the WordPress image and auto-deploys to dev. Verify i
 
 Backups are stored in R2 and run every 6 hours. Each backup includes a MariaDB dump and a sync of WordPress uploads.
 
-### Restore database
+### Restore to localhost
+
+Download the latest backup from R2 and run it locally — no SSH needed:
+
+```sh
+pnpm wp:restore
+```
+
+This downloads the latest DB dump + all uploads from R2, imports them into the local `docker-compose.yml` stack, and rewrites remote URLs to `http://localhost:8080`. Run `pnpm wp:restore --help` for setup instructions and options.
+
+After the restore, start the frontend in another terminal with `pnpm dev`.
+
+### Restore database (production VPS)
 
 1. SSH into the VPS:
    ```sh

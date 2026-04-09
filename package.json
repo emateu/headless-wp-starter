@@ -12,6 +12,7 @@
     "wp:logs": "docker compose logs -f wordpress",
     "wp:init": "docker compose exec wordpress wp-init.sh --allow-root",
     "wp:destroy": "docker compose down -v",
+    "wp:restore": "./infra/backup/restore-from-r2.sh",
     "ralph": "./ralph/once.sh",
     "ralph:loop": "./ralph/loop.sh",
     "postinstall": "lefthook install || true"
