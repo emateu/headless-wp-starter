@@ -27,15 +27,7 @@ COPY wp-content/themes/headless/ /usr/src/wordpress/wp-content/themes/headless/
 COPY wp-content/plugins/cms-core/ /usr/src/wordpress/wp-content/plugins/cms-core/
 
 # Entrypoint: sync plugins/themes, fix permissions, then run WordPress entrypoint
-COPY --chmod=755 <<'ENTRY' /usr/local/bin/sync-wp-content.sh
-#!/bin/bash
-rm -rf /var/www/html/wp-content/plugins/* 2>/dev/null || true
-cp -r /usr/src/wordpress/wp-content/plugins/* /var/www/html/wp-content/plugins/ 2>/dev/null || true
-rm -rf /var/www/html/wp-content/themes/* 2>/dev/null || true
-cp -r /usr/src/wordpress/wp-content/themes/* /var/www/html/wp-content/themes/ 2>/dev/null || true
-mkdir -p /var/www/html/wp-content/uploads && chown -R www-data:www-data /var/www/html/wp-content/uploads
-exec docker-entrypoint.sh "$@"
-ENTRY
+COPY --chmod=755 sync-wp-content.sh /usr/local/bin/sync-wp-content.sh
 
 # WP init script: configures WordPress via WP-CLI (idempotent, safe to re-run)
 COPY --chmod=755 wp-init.sh /usr/local/bin/wp-init.sh
